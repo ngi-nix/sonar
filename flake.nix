@@ -31,6 +31,10 @@
           packageJSON = ./package.json;
           yarnNix = ./yarn.nix;
           yarnLock = ./yarn.lock;
+          workspaceDependencies = [{
+            pname = "${pname}-ui";
+            packageJSON = "${sonar-src}/packages/ui/package.json";
+          }];
         });
     in
 
@@ -38,21 +42,26 @@
 
       # A Nixpkgs overlay.
       overlay = final: prev:
+        with final;
         let
           deps = node_modules final;
         in
         {
-          sonar = final.stdenv.mkDerivation {
-            inherit version;
+          sonar = stdenv.mkDerivation {
+            inherit version pname;
             src = sonar-src;
+            buildInputs = [ nodejs ];
 
             configurePhase = ''
               ln -s ${deps}/node_modules node_modules
-              ls -lah node_modules
+              ln -s ${deps}/node_modules packages/ui/node_modules
+              cd node_modules
+              ls -lah
+              cd ..
             '';
 
             buildPhase = ''
-              npm run rebuild
+              npm run build:ui 
             '';
 
             meta = {
