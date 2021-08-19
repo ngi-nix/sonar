@@ -2,11 +2,11 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1628144860,
-        "narHash": "sha256-cEBTjXuZVHCeCnQaZILI7mAiCWwX9nJ4dkup64zu8Lc=",
+        "lastModified": 1629292755,
+        "narHash": "sha256-5xMo32NVLnloY9DveqwJO/Cab1+PbTMPqU4WMmawX5M=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "6dc0549183672acd39d735a465098ca9deeff6ad",
+        "rev": "253aecf69ed7595aaefabde779aa6449195bebb7",
         "type": "github"
       },
       "original": {
@@ -24,16 +24,17 @@
     "sonar-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1623923761,
-        "narHash": "sha256-hpE4Q/3egX9myPzrHjlHg6fT+uuAI+c/pYRpBel6/ZE=",
+        "lastModified": 1621441186,
+        "narHash": "sha256-D/ueec3P4EnobaZEnqjN+nMuiWUq8do2eQuczCOY6Sg=",
         "owner": "arso-project",
         "repo": "sonar",
-        "rev": "2cc52b6797467ac002aa06718f061e9873207aba",
+        "rev": "8a48325389a3dbd39af741d1c3a017a12806aaa8",
         "type": "github"
       },
       "original": {
         "owner": "arso-project",
         "repo": "sonar",
+        "rev": "8a48325389a3dbd39af741d1c3a017a12806aaa8",
         "type": "github"
       }
     }

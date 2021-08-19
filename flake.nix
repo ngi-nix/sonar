@@ -5,7 +5,7 @@
   inputs.nixpkgs.url = "nixpkgs/nixpkgs-unstable";
 
   # Upstream source tree(s).
-  inputs.sonar-src = { url = "github:arso-project/sonar"; flake = false; };
+  inputs.sonar-src = { url = "github:arso-project/sonar/8a48325389a3dbd39af741d1c3a017a12806aaa8"; flake = false; };
 
   outputs = { self, nixpkgs, sonar-src }:
     let
@@ -22,20 +22,20 @@
       # Nixpkgs instantiated for supported system types.
       nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; overlays = [ self.overlay ]; });
 
-      pname = "sonar";
+      # pname = "sonar";
 
-      node_modules = (pkgs:
-        pkgs.mkYarnModules {
-          pname = "${pname}-node_modules";
-          inherit version;
-          packageJSON = ./package.json;
-          yarnNix = ./yarn.nix;
-          yarnLock = ./yarn.lock;
-          workspaceDependencies = [{
-            pname = "${pname}-ui";
-            packageJSON = "${sonar-src}/packages/ui/package.json";
-          }];
-        });
+      # node_modules = (pkgs:
+      #   pkgs.mkYarnModules {
+      #     pname = "${pname}-node_modules";
+      #     inherit version;
+      #     packageJSON = ./package.json;
+      #     yarnNix = ./yarn.nix;
+      #     yarnLock = ./yarn.lock;
+      #     workspaceDependencies = [{
+      #       pname = "${pname}-ui";
+      #       packageJSON = "${sonar-src}/packages/ui/package.json";
+      #     }];
+      #   });
     in
 
     {
@@ -44,24 +44,36 @@
       overlay = final: prev:
         with final;
         let
-          deps = node_modules final;
+          # installation on package.json with no version fails silently
+          # jsdoc is used as a global dependency
+          # express and open are used in ui and are missing in package.json
+          patchedPackageJSON = final.runCommand "package.json" { } ''
+            ${jq}/bin/jq '.version = "0.4.0" |
+              .devDependencies."@jsdoc/cli" = "^0.2.5" |
+              .devDependencies.express = "^4.17.1" |
+              .devDependencies.open = "^8.2.1" |
+              .devDependencies.yargs = "^17.1.1"' ${sonar-src}/package.json > $out
+          '';
         in
         {
-          sonar = stdenv.mkDerivation {
-            inherit version pname;
+          sonar = mkYarnPackage {
+            pname = "sonar";
+            inherit version;
             src = sonar-src;
-            buildInputs = [ nodejs ];
+            yarnNix = ./yarn.nix;
+            yarnLock = ./yarn.lock;
+            packageJSON = patchedPackageJSON;
 
+            # needs to be overridden because sonar depends on sonar
+            # original configure phase will try to make a conflicting symlink
             configurePhase = ''
-              ln -s ${deps}/node_modules node_modules
-              ln -s ${deps}/node_modules packages/ui/node_modules
-              cd node_modules
-              ls -lah
-              cd ..
+              ln -s $node_modules node_modules;
             '';
 
             buildPhase = ''
-              npm run build:ui 
+              # Yarn writes cache directories etc to $HOME.
+              export HOME=$PWD/yarn_home
+              yarn build:ui
             '';
 
             meta = {
@@ -96,13 +108,10 @@
         (system:
           let
             pkgs = nixpkgsFor.${system};
-            deps = node_modules pkgs;
           in
           with pkgs; mkShell {
             buildInputs = [ nodejs yarn ];
             shellHook = ''
-              export PATH="${deps}/bin:$PATH"
-              ln -s ${deps} node_modules
             '';
           }
         );
